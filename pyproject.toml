@@ -24,11 +24,11 @@ dependencies = [
 illum = "flax_illuminant_estimation:run"
 
 [dependency-groups]
-dev = [
-  "ipykernel>=7.2.0",
-  "ruff>=0.15.7",
-]
+dev = ["ipykernel>=7.2.0", "ruff>=0.15.7"]
 
 [build-system]
 requires = ["uv_build>=0.9.4,<0.10.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+link-mode = "symlink"
