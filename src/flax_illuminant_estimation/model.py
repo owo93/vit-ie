@@ -3,6 +3,7 @@ from flax import nnx
 
 
 class PatchEmbedding(nnx.Module):
+
     def __init__(self, *, img_size, patch_size, dim, rngs):
         assert img_size % patch_size == 0
         self.num_patches = (img_size // patch_size) ** 2
@@ -99,7 +100,9 @@ class ViT(nnx.Module):
             img_size=img_size, patch_size=patch_size, dim=dim, rngs=rngs
         )
 
-        self.blocks = [Encoder(dim, num_heads, mlp_ratio, dropout_rate, rngs) for _ in range(depth)]
+        self.blocks = [
+            Encoder(dim, num_heads, mlp_ratio, dropout_rate, rngs) for _ in range(depth)
+        ]
 
         self.norm = nnx.LayerNorm(dim, rngs=rngs)
 
