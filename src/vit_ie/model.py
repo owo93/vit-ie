@@ -64,7 +64,7 @@ class Encoder(nnx.Module):
             in_features=dim,
             qkv_features=dim,
             out_features=dim,
-            dropout_rate=0.0,
+            dropout_rate=0.0,  # intentional, no dropout in attention
             decode=False,
             rngs=rngs,
         )
