@@ -1,3 +1,4 @@
+# ruff: noqa
 import marimo
 
 __generated_with = "0.24.0"
@@ -9,6 +10,7 @@ def _():
     import os
     import sys
     from pathlib import Path
+
     import treescope
 
     # Viewing structure needs no GPU. Force CPU so JAX/CUDA init can't
@@ -84,12 +86,8 @@ def _(jax, mc, mo, model, nnx):
     mlp_ratio = 4  # CONSTANT, non-configurable
     mlp_hidden_dims = int(mc.dim * mlp_ratio)
 
-    total_params = sum(
-        int(x.size) for x in jax.tree.leaves(nnx.state(model, nnx.Param))
-    )
-    encoder_params = sum(
-        int(x.size) for x in jax.tree.leaves(nnx.state(model.blocks, nnx.Param))
-    )
+    total_params = sum(int(x.size) for x in jax.tree.leaves(nnx.state(model, nnx.Param)))
+    encoder_params = sum(int(x.size) for x in jax.tree.leaves(nnx.state(model.blocks, nnx.Param)))
 
     encoder_pct = (encoder_params / total_params) * 100
 

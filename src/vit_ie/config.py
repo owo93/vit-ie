@@ -69,7 +69,9 @@ class Config:
         run_d = raw.get("run", {})
 
         return cls(
-            model=ModelConfig(**model_d), trainer=TrainerConfig(**trainer_d), run=RunConfig(**run_d)
+            model=ModelConfig(**model_d),
+            trainer=TrainerConfig(**trainer_d),
+            run=RunConfig(**run_d),
         )
 
     def to_dict(self) -> dict[str, Any]:

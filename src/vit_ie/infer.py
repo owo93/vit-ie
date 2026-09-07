@@ -62,10 +62,7 @@ def show(image: str | Path, pred: Array, size: int = 224) -> Image.Image:
 
 
 def main() -> None:
-    if FLAGS.config:
-        config = Config.from_yaml(FLAGS.config)
-    else:
-        config = Config()
+    config = Config.from_yaml(FLAGS.config) if FLAGS.config else Config()
 
     checkpoint_path = Path(FLAGS.checkpoint) if FLAGS.checkpoint else None
 

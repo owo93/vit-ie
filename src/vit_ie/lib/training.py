@@ -31,7 +31,14 @@ from vit_ie.model import ViT
 if TYPE_CHECKING:
     from data.loader import SimpleCubePPDataset
 
-ERROR_STAT_FIELDS: tuple[str, ...] = ("mean", "median", "trimean", "best_25", "worst_25", "worst")
+ERROR_STAT_FIELDS: tuple[str, ...] = (
+    "mean",
+    "median",
+    "trimean",
+    "best_25",
+    "worst_25",
+    "worst",
+)
 
 
 def _wandb_error_stats(stats: dict[str, float], namespace: str) -> dict[str, float]:
@@ -143,6 +150,7 @@ def run_training(
                 progress.update(
                     train_task,
                     advance=1,
+                    # ruff: noqa: E501
                     description=f"epoch {epoch + 1}/{config.trainer.epochs}: train loss \u2192 [i bold cyan]{float(current_metrics['loss']):.7f}",
                 )
 
@@ -167,6 +175,7 @@ def run_training(
                 progress.update(
                     eval_task,
                     advance=1,
+                    # ruff: noqa: E501
                     description=f"epoch {epoch + 1}/{config.trainer.epochs}: eval loss \u2192 [i bold magenta]{float(current_metrics['loss']):.7f}",
                 )
 

@@ -42,5 +42,20 @@ build-backend = "uv_build"
 [tool.basedpyright]
 typeCheckingMode = "off"
 
+[tool.ruff]
+indent-width = 4
+line-length = 100
+
+[tool.ruff.lint]
+select = ["ANN", "B", "E", "SIM"]
+ignore = ["ANN401", "ANN204"]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+docstring-code-line-length = 42
+line-ending = "lf"
+indent-style = "space"
+
 [tool.uv]
 link-mode = "symlink"

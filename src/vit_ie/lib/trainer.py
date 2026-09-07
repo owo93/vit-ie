@@ -60,7 +60,8 @@ class Trainer:
         schedule = self.create_schedule(config.epochs, config.learning_rate, steps_per_epoch)
 
         tx = optax.chain(
-            optax.clip_by_global_norm(1.0), optax.adamw(schedule, weight_decay=config.weight_decay)
+            optax.clip_by_global_norm(1.0),
+            optax.adamw(schedule, weight_decay=config.weight_decay),
         )
 
         warmup_steps = WARMUP_EPOCHS * steps_per_epoch

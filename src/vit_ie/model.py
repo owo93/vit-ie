@@ -22,7 +22,7 @@ class PatchEmbedding(nnx.Module):
             nnx.initializers.truncated_normal(0.02)(rngs.params(), (1, self.num_patches, dim))
         )
 
-    def __call__(self, x):
+    def __call__(self, x: Array) -> Array:
         B = x.shape[0]
         x = self.project(x)
 

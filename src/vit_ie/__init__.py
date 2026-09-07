@@ -27,7 +27,7 @@ flags.DEFINE_string("image", None, "path to input image")
 flags.DEFINE_string("checkpoint", None, "path to save checkpoint")
 
 
-def main(argv):
+def main(argv: list[str]) -> None:
     if len(argv) < 1:
         raise ValueError("No command specified. Use --command to specify train or infer.")
 
@@ -41,5 +41,6 @@ def main(argv):
         infer.main()
 
 
+# ruff: noqa: ANN201
 def run():
     app.run(main)
