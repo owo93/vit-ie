@@ -10,12 +10,15 @@ dependencies = [
   "datasets>=4.8.5",
   "flax>=0.12.3",
   "huggingface-hub>=1.12.0",
+  "ipykernel>=7.2.0",
+  "ipython>=9.12.0",
   "jax[cuda13]>=0.9.0.1",
   "orbax>=0.1.9",
   "pillow>=12.1.0",
   "pyyaml>=6.0.3",
   "rich>=14.3.2",
   "tqdm>=4.67.3",
+  "treescope>=0.1.10",
   "typing>=3.10.0.0",
   "wandb>=0.18.0",
 ]
@@ -27,6 +30,7 @@ illum = "flax_illuminant_estimation:run"
 dev = [
   "basedpyright>=1.39.10",
   "ipykernel>=7.2.0",
+  "marimo>=0.24.0",
   "ruff>=0.15.7",
   "ty>=0.0.44",
 ]
