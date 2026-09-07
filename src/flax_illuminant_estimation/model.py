@@ -1,10 +1,10 @@
 import jax.numpy as jnp
 from flax import nnx
+from jax import Array
 
 
 class PatchEmbedding(nnx.Module):
-
-    def __init__(self, *, img_size, patch_size, dim, rngs):
+    def __init__(self, *, img_size: int, patch_size: int, dim: int, rngs: nnx.Rngs):
         assert img_size % patch_size == 0
         self.num_patches = (img_size // patch_size) ** 2
         self.dim = dim
@@ -18,7 +18,9 @@ class PatchEmbedding(nnx.Module):
             rngs=rngs,
         )
 
-        self.pos_embed = nnx.Param(jnp.zeros((1, self.num_patches, dim)))
+        self.pos_embed = nnx.Param(
+            nnx.initializers.truncated_normal(0.02)(rngs.params(), (1, self.num_patches, dim))
+        )
 
     def __call__(self, x):
         B = x.shape[0]
@@ -31,23 +33,29 @@ class PatchEmbedding(nnx.Module):
 
 
 class MLP(nnx.Module):
-    def __init__(self, dim, mlp_dim, dropout_rate, rngs) -> None:
+    def __init__(self, dim: int, mlp_dim: int, dropout_rate: float, rngs: nnx.Rngs) -> None:
         self.fc1 = nnx.Linear(dim, mlp_dim, rngs=rngs)
         self.fc2 = nnx.Linear(mlp_dim, dim, rngs=rngs)
 
         self.dropout = nnx.Dropout(dropout_rate, rngs=rngs)
 
-    def __call__(self, x, *, train):
+    def __call__(self, x: Array, *, train: bool) -> Array:
         x = self.fc1(x)
         x = nnx.gelu(x)
         x = self.dropout(x, deterministic=not train)
         x = self.fc2(x)
-        x = self.dropout(x, deterministic=not train)
         return x
 
 
 class Encoder(nnx.Module):
-    def __init__(self, dim, num_heads, mlp_ratio, dropout_rate, rngs):
+    def __init__(
+        self,
+        dim: int,
+        num_heads: int,
+        mlp_ratio: float,
+        dropout_rate: float,
+        rngs: nnx.Rngs,
+    ):
         mlp_dim = int(dim * mlp_ratio)
 
         self.n1 = nnx.LayerNorm(dim, rngs=rngs)
@@ -56,7 +64,7 @@ class Encoder(nnx.Module):
             in_features=dim,
             qkv_features=dim,
             out_features=dim,
-            dropout_rate=dropout_rate,
+            dropout_rate=0.0,
             decode=False,
             rngs=rngs,
         )
@@ -66,7 +74,7 @@ class Encoder(nnx.Module):
 
         self.dropout = nnx.Dropout(dropout_rate, rngs=rngs)
 
-    def __call__(self, x, *, train):
+    def __call__(self, x: Array, *, train: bool) -> Array:
         h = self.n1(x)
         h = self.attn(inputs_q=h, inputs_k=h, inputs_v=h, deterministic=not train)
 
@@ -75,7 +83,6 @@ class Encoder(nnx.Module):
 
         h = self.n2(x)
         h = self.mlp(h, train=train)
-
         x += h
 
         return x
@@ -87,28 +94,26 @@ class ViT(nnx.Module):
     def __init__(
         self,
         *,
-        img_size=224,
-        patch_size=16,
-        dim=384,
-        depth=6,
-        num_heads=6,
-        mlp_ratio=4.0,
-        dropout_rate=0.1,
+        img_size: int = 224,
+        patch_size: int = 16,
+        dim: int = 384,
+        depth: int = 6,
+        num_heads: int = 6,
+        mlp_ratio: float = 4.0,
+        dropout_rate: float = 0.1,
         rngs: nnx.Rngs,
     ):
         self.patch_embed = PatchEmbedding(
             img_size=img_size, patch_size=patch_size, dim=dim, rngs=rngs
         )
 
-        self.blocks = [
-            Encoder(dim, num_heads, mlp_ratio, dropout_rate, rngs) for _ in range(depth)
-        ]
+        self.blocks = [Encoder(dim, num_heads, mlp_ratio, dropout_rate, rngs) for _ in range(depth)]
 
         self.norm = nnx.LayerNorm(dim, rngs=rngs)
 
         self.head = nnx.Linear(dim, 3, rngs=rngs)
 
-    def __call__(self, x, *, train):
+    def __call__(self, x: Array, *, train: bool) -> Array:
         x = self.patch_embed(x)
         for block in self.blocks:
             x = block(x, train=train)
