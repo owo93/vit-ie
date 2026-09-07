@@ -25,8 +25,8 @@ def _():
 
 @app.cell
 def _(mo, nnx):
-    from flax_illuminant_estimation.config import Config
-    from flax_illuminant_estimation.model import ViT
+    from vit_ie.config import Config
+    from vit_ie.model import ViT
 
     try:
         mc = Config.from_yaml("config.yaml").model
@@ -58,12 +58,14 @@ def _(mo):
 
 @app.cell
 def _(mo, model):
-    mo.vstack([
-        mo.inspect(model.patch_embed),
-        mo.inspect(model.blocks),
-        mo.inspect(model.norm),
-        mo.inspect(model.head)
-    ])
+    mo.vstack(
+        [
+            mo.inspect(model.patch_embed),
+            mo.inspect(model.blocks),
+            mo.inspect(model.norm),
+            mo.inspect(model.head),
+        ]
+    )
     return
 
 
@@ -72,10 +74,7 @@ def _(jax, mo, model, nnx):
     total = sum(int(x.size) for x in jax.tree.leaves(nnx.state(model, nnx.Param)))
     size_bytes = total * 4
 
-    mo.md(
-        f"**Trainable params:** {total:,}\n"
-        f"**Size (float32):** {size_bytes / 1e6:.2f} MB"
-    )
+    mo.md(f"**Trainable params:** {total:,}\n**Size (float32):** {size_bytes / 1e6:.2f} MB")
     return
 
 

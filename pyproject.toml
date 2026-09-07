@@ -1,5 +1,5 @@
 [project]
-name = "flax-illuminant-estimation"
+name = "vit-ie"
 version = "0.1.2"
 description = "A vision transformer (ViT) model for estimating illuminant color in images"
 readme = "README.md"
@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-illum = "flax_illuminant_estimation:run"
+illum = "vit_ie:run"
 
 [dependency-groups]
 dev = [
@@ -39,8 +39,8 @@ dev = [
 requires = ["uv_build>=0.9.4,<0.10.0"]
 build-backend = "uv_build"
 
-[tool.uv]
-link-mode = "symlink"
-
 [tool.basedpyright]
 typeCheckingMode = "off"
+
+[tool.uv]
+link-mode = "symlink"

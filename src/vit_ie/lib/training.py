@@ -2,8 +2,8 @@ import math
 from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
-import wandb
 from flax import nnx
+from jax import Array
 from rich import box
 from rich.console import Console, Group
 from rich.live import Live
@@ -16,17 +16,17 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 from rich.table import Table
-from jax import Array
 
-from flax_illuminant_estimation.checkpoint import CheckpointState, save, should_checkpoint
-from flax_illuminant_estimation.config import Config
-from flax_illuminant_estimation.lib.metrics import (
+import wandb
+from vit_ie.checkpoint import CheckpointState, save, should_checkpoint
+from vit_ie.config import Config
+from vit_ie.lib.metrics import (
     create_eval_metrics,
     create_train_metrics,
     error_statistics,
 )
-from flax_illuminant_estimation.lib.trainer import Trainer, TrainState, eval_step, train_step
-from flax_illuminant_estimation.model import ViT
+from vit_ie.lib.trainer import Trainer, TrainState, eval_step, train_step
+from vit_ie.model import ViT
 
 if TYPE_CHECKING:
     from data.loader import SimpleCubePPDataset

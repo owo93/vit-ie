@@ -1,7 +1,7 @@
 import optax
 from jax import Array
 
-from flax_illuminant_estimation.lib.metrics import reproduction_cosine_similarity
+from vit_ie.lib.metrics import reproduction_cosine_similarity
 
 
 def cosine_distance(pred: Array, target: Array, epsilon: float = 1e-8) -> Array:

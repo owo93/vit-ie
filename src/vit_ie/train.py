@@ -2,8 +2,8 @@ import jax
 from absl import flags
 
 from data.loader import SimpleCubePPDataset
-from flax_illuminant_estimation.config import Config
-from flax_illuminant_estimation.lib.training import run_training
+from vit_ie.config import Config
+from vit_ie.lib.training import run_training
 
 FLAGS = flags.FLAGS
 

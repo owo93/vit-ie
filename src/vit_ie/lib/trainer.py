@@ -4,14 +4,14 @@ from flax import nnx
 from jax import Array
 from jax.typing import DTypeLike
 
-from flax_illuminant_estimation.config import TrainerConfig
-from flax_illuminant_estimation.lib.losses import cosine_distance, reproduction_cosine_distance
-from flax_illuminant_estimation.lib.metrics import (
+from vit_ie.config import TrainerConfig
+from vit_ie.lib.losses import cosine_distance, reproduction_cosine_distance
+from vit_ie.lib.metrics import (
     angular_error,
     corrected_scene_chromaticity_error,
     reproduction_angular_error,
 )
-from flax_illuminant_estimation.model import ViT
+from vit_ie.model import ViT
 
 WARMUP_EPOCHS = 3
 AUX_WARMUP_EPOCHS = 12

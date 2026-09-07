@@ -9,9 +9,9 @@ from jax import Array
 from PIL import Image, ImageDraw
 from rich.pretty import pprint
 
-from flax_illuminant_estimation.checkpoint import latest, list_checkpoints, load
-from flax_illuminant_estimation.config import Config
-from flax_illuminant_estimation.model import ViT
+from vit_ie.checkpoint import latest, list_checkpoints, load
+from vit_ie.config import Config
+from vit_ie.model import ViT
 
 FLAGS = flags.FLAGS
 
