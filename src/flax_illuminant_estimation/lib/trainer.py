@@ -1,32 +1,49 @@
-import jax
 import jax.numpy as jnp
 import optax
 from flax import nnx
+from jax import Array
+from jax.typing import DTypeLike
 
 from flax_illuminant_estimation.config import TrainerConfig
-from flax_illuminant_estimation.lib import angular_error, reproduction_angular_error
+from flax_illuminant_estimation.lib.losses import cosine_distance, reproduction_cosine_distance
+from flax_illuminant_estimation.lib.metrics import (
+    angular_error,
+    corrected_scene_chromaticity_error,
+    reproduction_angular_error,
+)
 from flax_illuminant_estimation.model import ViT
+
+WARMUP_EPOCHS = 3
+AUX_WARMUP_EPOCHS = 12
 
 
 # subclass nnx.Optimizer to directly call .update()
 class TrainState(nnx.Optimizer):
-    def __init__(self, model: ViT, tx: optax.GradientTransformation, schedule: optax.Schedule):
+    def __init__(
+        self,
+        model: ViT,
+        tx: optax.GradientTransformation,
+        schedule: optax.Schedule,
+        warmup_steps: int,
+        aux_warmup_steps: int,
+    ):
         super().__init__(model, tx, wrt=nnx.Param)
         self.schedule = schedule
+        self.warmup_steps = warmup_steps
+        self.aux_warmup_steps = aux_warmup_steps
         self.model = model
 
     @property
-    def lr(self):
-        return self.schedule(self.step.value)
+    def lr(self) -> Array:
+        return jnp.asarray(self.schedule(self.step.value))
 
 
 class Trainer:
     def __init__(self, config: TrainerConfig):
         self.config = config
 
-    def create_schedule(self, epochs, peak_lr, steps_per_epoch):
-        warmup_epochs = 3
-        warmup_steps = warmup_epochs * steps_per_epoch
+    def create_schedule(self, epochs: int, peak_lr: float, steps_per_epoch: int) -> optax.Schedule:
+        warmup_steps = WARMUP_EPOCHS * steps_per_epoch
 
         total_steps = epochs * steps_per_epoch
 
@@ -38,7 +55,7 @@ class Trainer:
             end_value=peak_lr * 0.01,
         )
 
-    def create_train_state(self, model: ViT, steps_per_epoch) -> TrainState:
+    def create_train_state(self, model: ViT, steps_per_epoch: int) -> TrainState:
         config: TrainerConfig = self.config
         schedule = self.create_schedule(config.epochs, config.learning_rate, steps_per_epoch)
 
@@ -46,71 +63,59 @@ class Trainer:
             optax.clip_by_global_norm(1.0), optax.adamw(schedule, weight_decay=config.weight_decay)
         )
 
-        return TrainState(model, tx, schedule)
+        warmup_steps = WARMUP_EPOCHS * steps_per_epoch
+        aux_warmup_steps = AUX_WARMUP_EPOCHS * steps_per_epoch
+        return TrainState(model, tx, schedule, warmup_steps, aux_warmup_steps)
 
 
 @nnx.jit(static_argnames=("dtype",))
-def train_step(state: TrainState, model: ViT, batch_images, batch_illum, dtype):
-    def loss_fn(model: ViT):
-        pred = model(batch_images.astype(dtype), train=True).astype(jnp.float32)
-        illum = batch_illum.astype(jnp.float32)
+def train_step(
+    state: TrainState,
+    model: ViT,
+    images: Array,
+    illuminants: Array,
+    dtype: DTypeLike,
+) -> dict[str, Array]:
+    def loss_fn(model: ViT) -> tuple[Array, Array]:
+        pred = model(images.astype(dtype), train=True).astype(jnp.float32)
+        target = illuminants.astype(jnp.float32)
 
-        cos_sim = optax.losses.cosine_similarity(pred, illum, epsilon=1e-8)
-        ae = angular_error(cos_sim)
+        lam = jnp.clip(state.step.value / state.aux_warmup_steps, 0.0, 1.0)
+        loss = jnp.mean(cosine_distance(pred, target)) + lam * jnp.mean(
+            reproduction_cosine_distance(pred, target)
+        )
+        angular_errors = angular_error(pred, target)
 
-        loss = jnp.mean(1.0 - cos_sim)  # scalar
-        return loss, ae
+        return loss, angular_errors
 
-    (loss, ae), grads = nnx.value_and_grad(loss_fn, has_aux=True)(model)
-    # grads = jax.tree.map(lambda g: jnp.where(jnp.isnan(g), jnp.zeros_like(g), g), grads)
+    (loss, angular_errors), grads = nnx.value_and_grad(loss_fn, has_aux=True)(model)
     state.update(model, grads)
     return {
         "train/loss": loss,
-        "train/ae": jnp.degrees(ae),  # (B, )
+        "train/ae": jnp.degrees(angular_errors),  # (B, )
         "train/lr": state.lr,
     }
 
 
 @nnx.jit(static_argnames=("dtype",))
-def eval_step(model: ViT, batch_images, batch_illum, dtype) -> dict:
-    pred = model(batch_images.astype(dtype), train=False).astype(jnp.float32)
-    illum = batch_illum.astype(jnp.float32)
-    image = batch_images.astype(jnp.float32)
+def eval_step(
+    model: ViT,
+    images: Array,
+    illuminants: Array,
+    dtype: DTypeLike,
+) -> dict[str, Array]:
+    images = images.astype(jnp.float32)
+    pred = model(images.astype(dtype), train=False).astype(jnp.float32)
+    target = illuminants.astype(jnp.float32)
 
-    cos_sim = optax.losses.cosine_similarity(pred, illum, epsilon=1e-8)
-    ae = angular_error(cos_sim)
-    loss = 1.0 - cos_sim  # (B, )
+    loss = cosine_distance(pred, target)  # (B, )
+    angular_errors = angular_error(pred, target)
+    reproduction_errors = reproduction_angular_error(pred, target)
+    corrected_scene_errors = corrected_scene_chromaticity_error(images, pred, target)
 
     return {
         "eval/loss": loss,
-        "eval/ae": jnp.degrees(ae),
-        "eval/rae": jnp.degrees(jax.vmap(reproduction_angular_error)(image, pred, illum)),
-    }
-
-
-def create_eval_metrics() -> nnx.MultiMetric:
-    return nnx.MultiMetric(
-        loss=nnx.metrics.Average("loss"),
-        ae=nnx.metrics.Average("ae"),
-        rae=nnx.metrics.Average("rae"),
-    )
-
-
-def create_train_metrics() -> nnx.MultiMetric:
-    return nnx.MultiMetric(loss=nnx.metrics.Average("loss"), ae=nnx.metrics.Average("ae"))
-
-
-def compute_metrics(errors):
-    n = len(errors)
-    sorted_e = jnp.sort(errors)
-    q1 = float(jnp.percentile(errors, 25).squeeze())
-    q2 = float(jnp.percentile(errors, 50).squeeze())
-    q3 = float(jnp.percentile(errors, 75).squeeze())
-    return {
-        "mean": float(jnp.mean(errors)),
-        "median": q2,
-        "trimean": 0.25 * q1 + 0.5 * q2 + 0.25 * q3,
-        "best_25": float(jnp.mean(sorted_e[: n // 4])),
-        "worst_25": float(jnp.mean(sorted_e[n - n // 4 :])),
-        "worst": float(sorted_e[-1].squeeze()),
+        "eval/ae": jnp.degrees(angular_errors),
+        "eval/rae": jnp.degrees(reproduction_errors),
+        "eval/csce": jnp.degrees(corrected_scene_errors),
     }

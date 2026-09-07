@@ -1,21 +1,15 @@
-import jax
-import jax.numpy as jnp
 import optax
+from jax import Array
+
+from flax_illuminant_estimation.lib.metrics import reproduction_cosine_similarity
 
 
-@jax.jit
-def angular_error(cos_sim, epsilon: float = 1e-8):
-    return jnp.arccos(jnp.clip(cos_sim, -1.0 + epsilon, 1.0 - epsilon))
+def cosine_distance(pred: Array, target: Array, epsilon: float = 1e-8) -> Array:
+    """Cosine distance 1 - cos(pred, target), the training objective."""
+    return 1.0 - optax.losses.cosine_similarity(pred, target, epsilon=epsilon)
 
 
-# https://doi.org/10.1109/TPAMI.2016.2582171
-@jax.jit
-def reproduction_angular_error(image, pred, gt, epsilon: float = 1e-8):
-    rendered_pred = image / (pred + epsilon)
-    rendered_gt = image / (gt + epsilon)
-
-    rgb_pred = jnp.sum(rendered_pred, axis=(0, 1))
-    rgb_gt = jnp.sum(rendered_gt, axis=(0, 1))
-
-    cos_sim = optax.losses.cosine_similarity(rgb_pred[None], rgb_gt[None], epsilon=epsilon)
-    return jax.vmap(angular_error)(cos_sim)
+def reproduction_cosine_distance(pred: Array, target: Array, epsilon: float = 1e-8) -> Array:
+    """Cosine distance 1 - cos(pred, target) in reproduction space, the smooth
+    surrogate for reproduction angular error."""
+    return 1.0 - reproduction_cosine_similarity(pred, target, epsilon=epsilon)
