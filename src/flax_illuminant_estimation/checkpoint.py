@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import orbax.checkpoint as ocp
 from flax import nnx
@@ -11,15 +12,22 @@ class CheckpointState:
     graphdef: nnx.GraphDef
     model_state: nnx.State
     epoch: int
-    config: dict
+    config: dict[str, Any]
 
 
 _checkpointer = ocp.PyTreeCheckpointer()
 
+CHECKPOINT_INTERVAL = 5
 
-def save(state: CheckpointState, checkpoint_dir: Path):
+
+def should_checkpoint(epoch: int, total_epochs: int) -> bool:
+    """Save every CHECKPOINT_INTERVAL epochs and always on the final epoch."""
+    return epoch % CHECKPOINT_INTERVAL == 0 or epoch == total_epochs
+
+
+def save(state: CheckpointState, checkpoint_dir: Path) -> Path:
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    ckpt = {
+    ckpt: dict[str, Any] = {
         "graphdef": state.graphdef,
         "model": nnx.to_pure_dict(state.model_state),
         "epoch": state.epoch,
@@ -38,7 +46,7 @@ def save(state: CheckpointState, checkpoint_dir: Path):
 
 def load(path: Path, target: CheckpointState | None = None) -> CheckpointState:
     path = path.resolve()
-    abstract_target = None
+    abstract_target: dict[str, Any] | None = None
     if target is not None:
         abstract_target = {
             "graphdef": target.graphdef,
@@ -56,7 +64,7 @@ def load(path: Path, target: CheckpointState | None = None) -> CheckpointState:
     )
 
 
-def list_checkpoints(checkpoint_dir: Path):
+def list_checkpoints(checkpoint_dir: Path) -> list[Path]:
     if not checkpoint_dir.exists():
         return []
 
