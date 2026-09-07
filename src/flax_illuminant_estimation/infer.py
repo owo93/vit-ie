@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from absl import flags
 from flax import nnx
+from jax import Array
 from PIL import Image, ImageDraw
 from rich.pretty import pprint
 
@@ -15,7 +16,7 @@ from flax_illuminant_estimation.model import ViT
 FLAGS = flags.FLAGS
 
 
-def estimate_illuminant(model, image_path, img_size):
+def estimate_illuminant(model: ViT, image_path: str | Path, img_size: int) -> Array:
     img = Image.open(image_path).convert("RGB")
     img = img.resize((img_size, img_size), Image.Resampling.LANCZOS)
     img = jnp.array(img, dtype=jnp.float32) / 255.0
@@ -25,7 +26,7 @@ def estimate_illuminant(model, image_path, img_size):
     return pred[0]
 
 
-def show(image, pred, size=224):
+def show(image: str | Path, pred: Array, size: int = 224) -> Image.Image:
     img = Image.open(image).convert("RGB")
     r, g, b = float(pred[0]), float(pred[1]), float(pred[2])
 
@@ -60,7 +61,7 @@ def show(image, pred, size=224):
     return canvas
 
 
-def main():
+def main() -> None:
     if FLAGS.config:
         config = Config.from_yaml(FLAGS.config)
     else:

@@ -1,4 +1,4 @@
-n implementation of Vision Transformer for predicting single illuminant color in images trained on the [SimpleCube++](https://github.com/Visillect/CubePlusPlus) dataset, built with Flax NNX
+n implementation of Vision Transformer for predicting single illuminant color in images trained off the [SimpleCube++](https://github.com/Visillect/CubePlusPlus) dataset, built with Flax NNX
 
 ## Usage
 
