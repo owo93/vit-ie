@@ -1,21 +1,32 @@
 import sys
-from pathlib import Path
 
 import jax.numpy as jnp
 import numpy as np
 from absl import flags
+from etils.epath import Path
 from flax import nnx
+from jax import Array
 from PIL import Image, ImageDraw
 from rich.pretty import pprint
 
-from flax_illuminant_estimation.checkpoint import latest, list_checkpoints, load
-from flax_illuminant_estimation.config import Config
-from flax_illuminant_estimation.model import ViT
+from vit_ie.checkpoint import latest, list_checkpoints, load
+from vit_ie.config import Config
+from vit_ie.model import ViT
 
 FLAGS = flags.FLAGS
 
 
-def estimate_illuminant(model, image_path, img_size):
+def estimate_illuminant(model: ViT, image_path: str | Path, img_size: int) -> Array:
+    """Predict the illuminant chromaticity for a single image.
+
+    Args:
+        model: Trained ViT illuminant-estimation model.
+        image_path: Path to the input image.
+        img_size: Size to resize the image to.
+
+    Returns:
+        Predicted illuminant chromaticity vector of length 3.
+    """
     img = Image.open(image_path).convert("RGB")
     img = img.resize((img_size, img_size), Image.Resampling.LANCZOS)
     img = jnp.array(img, dtype=jnp.float32) / 255.0
@@ -25,7 +36,17 @@ def estimate_illuminant(model, image_path, img_size):
     return pred[0]
 
 
-def show(image, pred, size=224):
+def show(image: str | Path, pred: Array, size: int = 224) -> Image.Image:
+    """Build a canvas showing the input, corrected image, and predicted swatch.
+
+    Args:
+        image: Path to the input image.
+        pred: Predicted illuminant chromaticity vector of length 3.
+        size: Reserved placeholder, kept for API compatibility.
+
+    Returns:
+        The composited comparison canvas.
+    """
     img = Image.open(image).convert("RGB")
     r, g, b = float(pred[0]), float(pred[1]), float(pred[2])
 
@@ -60,11 +81,9 @@ def show(image, pred, size=224):
     return canvas
 
 
-def main():
-    if FLAGS.config:
-        config = Config.from_yaml(FLAGS.config)
-    else:
-        config = Config()
+def main() -> None:
+    """Run inference from absl flags and display the result."""
+    config = Config.from_yaml(FLAGS.config) if FLAGS.config else Config()
 
     checkpoint_path = Path(FLAGS.checkpoint) if FLAGS.checkpoint else None
 
@@ -82,22 +101,22 @@ def main():
             sys.exit(1)
         print(f"Using latest checkpoint: {checkpoint_path}")
 
-    state = load(checkpoint_path)
+    state, meta = load(checkpoint_path)
 
-    if state.config:
-        pprint(state.config, expand_all=True, indent_guides=False)
+    if meta.config:
+        pprint(meta.config, expand_all=True, indent_guides=False)
 
     model = ViT(
-        img_size=state.config["model"]["img_size"],
-        patch_size=state.config["model"]["patch_size"],
-        dim=state.config["model"]["dim"],
-        depth=state.config["model"]["depth"],
-        num_heads=state.config["model"]["num_heads"],
+        img_size=meta.config["model"]["img_size"],
+        patch_size=meta.config["model"]["patch_size"],
+        dim=meta.config["model"]["dim"],
+        depth=meta.config["model"]["depth"],
+        num_heads=meta.config["model"]["num_heads"],
         rngs=nnx.Rngs(0),
     )
     nnx.update(model, state.model_state)
 
-    print(f"\nRestored from checkpoint at epoch {state.epoch}")
+    print(f"\nRestored from checkpoint at epoch {meta.epoch}")
 
     print(f"\nEstimating illuminant for: {FLAGS.image}")
     pred = estimate_illuminant(model, FLAGS.image, config.model.img_size)

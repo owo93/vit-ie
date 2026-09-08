@@ -1,7 +1,0 @@
-indent-width = 4
-line-length = 100
-
-[format]
-quote-style = "double"
-line-ending = "lf"
-indent-style = "space"

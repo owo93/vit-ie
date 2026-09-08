@@ -1,9 +1,10 @@
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import jax.numpy as jnp
 import yaml
+from etils.epath import Path
+from jax.typing import DTypeLike
 
 DTYPE_MAP = {
     "float16": jnp.float16,
@@ -37,12 +38,12 @@ class TrainerConfig:
     precision: Literal["float16", "bfloat16", "float32"] = "float32"
 
     def __post_init__(self):
-        if not isinstance(self.checkpoint_dir, Path):
-            self.checkpoint_dir = Path(self.checkpoint_dir)
+        self.checkpoint_dir = Path(self.checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     @property
-    def dtype(self):
+    def dtype(self) -> DTypeLike:
+        """Return the JAX dtype matching the configured precision."""
         return DTYPE_MAP.get(self.precision, jnp.float32)
 
 
@@ -59,8 +60,16 @@ class Config:
     run: RunConfig = field(default_factory=RunConfig)
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "Config":
-        with open(path, "r") as f:
+    def from_yaml(cls, path: str | Path) -> Config:
+        """Build a Config from a YAML file.
+
+        Args:
+            path: Path to the YAML config file.
+
+        Returns:
+            A Config populated from the YAML contents.
+        """
+        with open(path) as f:
             raw = yaml.safe_load(f) or {}
 
         model_d = raw.get("model", {})
@@ -68,11 +77,15 @@ class Config:
         run_d = raw.get("run", {})
 
         return cls(
-            model=ModelConfig(**model_d), trainer=TrainerConfig(**trainer_d), run=RunConfig(**run_d)
+            model=ModelConfig(**model_d),
+            trainer=TrainerConfig(**trainer_d),
+            run=RunConfig(**run_d),
         )
 
-    def to_dict(self):
-        def convert(obj):
+    def to_dict(self) -> dict[str, Any]:
+        """Return the config as a JSON-serializable dict."""
+
+        def convert(obj: Any) -> Any:
             if isinstance(obj, Path):
                 return str(obj)
             if isinstance(obj, (list, tuple)):

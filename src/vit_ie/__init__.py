@@ -7,10 +7,10 @@ from . import infer, train
 
 os.environ["XLA_FLAGS"] = (
     "--xla_gpu_autotune_level=2 "
-    "--xla_gpu_enable_async_all_reduce=true "
-    "--xla_gpu_deterministic_reductions=false "
-    "--xla_gpu_enable_async_all_gather=true "
-    "--xla_gpu_max_kernel_unroll=32"
+    "--xla_gpu_triton_gemm_any=true "
+    "--xla_gpu_multi_streamed_windowed_einsum=true "
+    "--xla_gpu_threshold_for_windowed_einsum_mib=0 "
+    "--xla_gpu_enable_latency_hiding_scheduler=true"
 )
 
 FLAGS = flags.FLAGS
@@ -27,7 +27,15 @@ flags.DEFINE_string("image", None, "path to input image")
 flags.DEFINE_string("checkpoint", None, "path to save checkpoint")
 
 
-def main(argv):
+def main(argv: list[str]) -> None:
+    """Dispatch to the train or infer command based on argv.
+
+    Args:
+        argv: Command-line arguments after the program name.
+
+    Raises:
+        ValueError: If no command is given or --image is missing for infer.
+    """
     if len(argv) < 1:
         raise ValueError("No command specified. Use --command to specify train or infer.")
 
@@ -41,5 +49,7 @@ def main(argv):
         infer.main()
 
 
+# ruff: noqa: ANN201
 def run():
+    """Console-script entry point that delegates to absl.app.run."""
     app.run(main)

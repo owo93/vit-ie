@@ -1,5 +1,5 @@
 [project]
-name = "flax-illuminant-estimation"
+name = "vit-ie"
 version = "0.1.2"
 description = "A vision transformer (ViT) model for estimating illuminant color in images"
 readme = "README.md"
@@ -7,26 +7,57 @@ requires-python = ">=3.14"
 authors = [{ name = "owo93", email = "iztyle30@gmail.com" }]
 dependencies = [
   "absl-py>=2.4.0",
+  "datasets>=4.8.5",
+  "etils>=1.14.0",
   "flax>=0.12.3",
+  "huggingface-hub>=1.12.0",
+  "ipykernel>=7.2.0",
+  "ipython>=9.12.0",
   "jax[cuda13]>=0.9.0.1",
-  "orbax>=0.1.9",
+  "orbax-checkpoint>=0.11.34",
   "pillow>=12.1.0",
   "pyyaml>=6.0.3",
   "rich>=14.3.2",
   "tqdm>=4.67.3",
+  "treescope>=0.1.10",
   "typing>=3.10.0.0",
   "wandb>=0.18.0",
 ]
 
 [project.scripts]
-illum = "flax_illuminant_estimation:run"
+illum = "vit_ie:run"
 
 [dependency-groups]
 dev = [
+  "basedpyright>=1.39.10",
   "ipykernel>=7.2.0",
+  "marimo>=0.24.0",
   "ruff>=0.15.7",
+  "ty>=0.0.44",
 ]
 
 [build-system]
 requires = ["uv_build>=0.9.4,<0.10.0"]
 build-backend = "uv_build"
+
+[tool.basedpyright]
+typeCheckingMode = "off"
+
+[tool.ruff]
+indent-width = 4
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "D", "DOC", "UP", "ANN", "RUF100"]
+ignore = ["ANN401", "ANN204", "D100", "D101", "D104", "D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+docstring-code-line-length = 42
+line-ending = "lf"
+indent-style = "space"
