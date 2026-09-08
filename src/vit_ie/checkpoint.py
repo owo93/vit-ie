@@ -1,21 +1,21 @@
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
+from dataclasses import asdict, dataclass
+from typing import Any, cast
 
-import orbax.checkpoint as ocp
+from etils.epath import Path
 from flax import nnx
-from flax.training import orbax_utils
+from orbax.checkpoint import v1 as ocp
 
 
 @dataclass
 class CheckpointState:
-    graphdef: nnx.GraphDef
     model_state: nnx.State
+
+
+@dataclass
+class CheckpointMetadata:
     epoch: int
     config: dict[str, Any]
 
-
-_checkpointer = ocp.PyTreeCheckpointer()
 
 CHECKPOINT_INTERVAL = 5
 
@@ -33,60 +33,66 @@ def should_checkpoint(epoch: int, total_epochs: int) -> bool:
     return epoch % CHECKPOINT_INTERVAL == 0 or epoch == total_epochs
 
 
-def save(state: CheckpointState, checkpoint_dir: Path) -> Path:
+def save(ckpt: CheckpointState, metadata: CheckpointMetadata, checkpoint_dir: Path) -> Path:
     """Persist a checkpoint state to disk.
 
     Args:
-        state: Checkpoint state to save.
+        ckpt: Checkpoint state to save.
+        metadata: Metadata to save alongside the checkpoint.
         checkpoint_dir: Directory in which to write the checkpoint.
 
     Returns:
         Path to the written checkpoint directory.
     """
+    checkpoint_dir = checkpoint_dir.resolve()
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    ckpt: dict[str, Any] = {
-        "graphdef": state.graphdef,
-        "model": nnx.to_pure_dict(state.model_state),
-        "epoch": state.epoch,
-        "config": state.config,
+
+    step_dir = checkpoint_dir.resolve() / f"checkpoint_{int(metadata.epoch):02}"
+
+    checkpointables = {
+        "model": nnx.to_pure_dict(ckpt.model_state),
     }
-    step_dir = checkpoint_dir.resolve() / f"checkpoint_{int(state.epoch):02}"
-    _checkpointer.save(
-        step_dir,
-        ckpt,
-        save_args=orbax_utils.save_args_from_target(ckpt),
-        force=True,
-        custom_metadata={"epoch": state.epoch, "config": state.config},
+
+    ocp.save_checkpointables(
+        step_dir, checkpointables, overwrite=True, custom_metadata=asdict(metadata)
     )
+
     return step_dir
 
 
-def load(path: Path, target: CheckpointState | None = None) -> CheckpointState:
+def load(path: Path) -> tuple[CheckpointState, CheckpointMetadata]:
     """Restore a checkpoint state from disk.
 
     Args:
         path: Path to the checkpoint directory to restore.
-        target: Optional checkpoint used to infer the expected structure.
 
     Returns:
-        The restored checkpoint state.
+        Tuple of the restored model state and the metadata saved with it.
+
+    Raises:
+        ValueError: If the checkpoint metadata is not a dictionary.
     """
     path = path.resolve()
-    abstract_target: dict[str, Any] | None = None
-    if target is not None:
-        abstract_target = {
-            "graphdef": target.graphdef,
-            "model": nnx.to_pure_dict(target.model_state),
-            "epoch": target.epoch,
-            "config": target.config,
-        }
-    restored = _checkpointer.restore(path, item=abstract_target)
-    model_state = nnx.State(nnx.restore_int_paths(restored["model"]))
-    return CheckpointState(
-        graphdef=restored["graphdef"],
-        model_state=model_state,
-        epoch=int(restored["epoch"]),
-        config=restored.get("config"),
+    restored_state = ocp.load_checkpointables(
+        path,
+        {
+            "model": None,
+        },
+    )
+
+    restored_meta = ocp.checkpointables_metadata(path).custom_metadata
+    if not isinstance(restored_meta, dict):
+        raise ValueError(f"Checkpoint at {path} has unexpected metadata: {restored_meta!r}")
+    metadata = cast(dict[str, Any], restored_meta)
+
+    return (
+        CheckpointState(
+            model_state=nnx.State(nnx.restore_int_paths(restored_state["model"])),
+        ),
+        CheckpointMetadata(
+            epoch=metadata["epoch"],
+            config=cast(dict[str, Any], metadata["config"]),
+        ),
     )
 
 

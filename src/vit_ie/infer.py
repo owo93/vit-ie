@@ -1,9 +1,9 @@
 import sys
-from pathlib import Path
 
 import jax.numpy as jnp
 import numpy as np
 from absl import flags
+from etils.epath import Path
 from flax import nnx
 from jax import Array
 from PIL import Image, ImageDraw
@@ -101,22 +101,22 @@ def main() -> None:
             sys.exit(1)
         print(f"Using latest checkpoint: {checkpoint_path}")
 
-    state = load(checkpoint_path)
+    state, meta = load(checkpoint_path)
 
-    if state.config:
-        pprint(state.config, expand_all=True, indent_guides=False)
+    if meta.config:
+        pprint(meta.config, expand_all=True, indent_guides=False)
 
     model = ViT(
-        img_size=state.config["model"]["img_size"],
-        patch_size=state.config["model"]["patch_size"],
-        dim=state.config["model"]["dim"],
-        depth=state.config["model"]["depth"],
-        num_heads=state.config["model"]["num_heads"],
+        img_size=meta.config["model"]["img_size"],
+        patch_size=meta.config["model"]["patch_size"],
+        dim=meta.config["model"]["dim"],
+        depth=meta.config["model"]["depth"],
+        num_heads=meta.config["model"]["num_heads"],
         rngs=nnx.Rngs(0),
     )
     nnx.update(model, state.model_state)
 
-    print(f"\nRestored from checkpoint at epoch {state.epoch}")
+    print(f"\nRestored from checkpoint at epoch {meta.epoch}")
 
     print(f"\nEstimating illuminant for: {FLAGS.image}")
     pred = estimate_illuminant(model, FLAGS.image, config.model.img_size)

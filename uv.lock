@@ -1298,15 +1298,6 @@ wheels = [
 ]
 
 [[package]]
-name = "orbax"
-version = "0.1.9"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "orbax-checkpoint" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/78/0e144f12703c95d4495e9abc390c2f548ee9f24d2e487137108a921b1d81/orbax-0.1.9.tar.gz", hash = "sha256:42dd487ceef9fbf027f4720f3d041686af75120466a528a8a8141226bc197218", size = 1649, upload-time = "2023-09-06T20:43:02.819Z" }
-
-[[package]]
 name = "orbax-checkpoint"
 version = "0.11.34"
 source = { registry = "https://pypi.org/simple" }
@@ -2124,12 +2115,13 @@ source = { editable = "." }
 dependencies = [
     { name = "absl-py" },
     { name = "datasets" },
+    { name = "etils" },
     { name = "flax" },
     { name = "huggingface-hub" },
     { name = "ipykernel" },
     { name = "ipython" },
     { name = "jax", extra = ["cuda13"] },
-    { name = "orbax" },
+    { name = "orbax-checkpoint" },
     { name = "pillow" },
     { name = "pyyaml" },
     { name = "rich" },
@@ -2152,12 +2144,13 @@ dev = [
 requires-dist = [
     { name = "absl-py", specifier = ">=2.4.0" },
     { name = "datasets", specifier = ">=4.8.5" },
+    { name = "etils", specifier = ">=1.14.0" },
     { name = "flax", specifier = ">=0.12.3" },
     { name = "huggingface-hub", specifier = ">=1.12.0" },
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "ipython", specifier = ">=9.12.0" },
     { name = "jax", extras = ["cuda13"], specifier = ">=0.9.0.1" },
-    { name = "orbax", specifier = ">=0.1.9" },
+    { name = "orbax-checkpoint", specifier = ">=0.11.34" },
     { name = "pillow", specifier = ">=12.1.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "rich", specifier = ">=14.3.2" },

@@ -1,9 +1,9 @@
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
 from typing import Any, Literal
 
 import jax.numpy as jnp
 import yaml
+from etils.epath import Path
 from jax.typing import DTypeLike
 
 DTYPE_MAP = {
@@ -38,8 +38,7 @@ class TrainerConfig:
     precision: Literal["float16", "bfloat16", "float32"] = "float32"
 
     def __post_init__(self):
-        if not isinstance(self.checkpoint_dir, Path):
-            self.checkpoint_dir = Path(self.checkpoint_dir)
+        self.checkpoint_dir = Path(self.checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     @property

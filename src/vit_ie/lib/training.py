@@ -18,7 +18,7 @@ from rich.progress import (
 from rich.table import Table
 
 import wandb
-from vit_ie.checkpoint import CheckpointState, save, should_checkpoint
+from vit_ie.checkpoint import CheckpointMetadata, CheckpointState, save, should_checkpoint
 from vit_ie.config import Config
 from vit_ie.lib.metrics import (
     create_eval_metrics,
@@ -73,7 +73,6 @@ def run_training(
         dropout_rate=config.model.dropout_rate,
         rngs=rngs,
     )
-    graphdef, _ = nnx.split(model)
 
     trainer = Trainer(config.trainer)
     state: TrainState = trainer.create_train_state(model, train_steps)
@@ -199,14 +198,15 @@ def run_training(
             eval_m = eval_metrics.compute()
 
             if should_checkpoint(epoch + 1, config.trainer.epochs):
-                model_state = nnx.state(model)
-                ckpt = CheckpointState(
-                    graphdef=graphdef,
-                    model_state=model_state,
+                _, model_state = nnx.split(model)
+                metadata = CheckpointMetadata(
                     epoch=epoch + 1,
                     config=config.to_dict(),
                 )
-                save(ckpt, config.trainer.checkpoint_dir)
+                ckpt = CheckpointState(
+                    model_state=model_state,
+                )
+                save(ckpt, metadata, config.trainer.checkpoint_dir)
 
             wandb.log(
                 {

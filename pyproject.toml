@@ -8,12 +8,13 @@ authors = [{ name = "owo93", email = "iztyle30@gmail.com" }]
 dependencies = [
   "absl-py>=2.4.0",
   "datasets>=4.8.5",
+  "etils>=1.14.0",
   "flax>=0.12.3",
   "huggingface-hub>=1.12.0",
   "ipykernel>=7.2.0",
   "ipython>=9.12.0",
   "jax[cuda13]>=0.9.0.1",
-  "orbax>=0.1.9",
+  "orbax-checkpoint>=0.11.34",
   "pillow>=12.1.0",
   "pyyaml>=6.0.3",
   "rich>=14.3.2",
@@ -60,6 +61,3 @@ docstring-code-format = true
 docstring-code-line-length = 42
 line-ending = "lf"
 indent-style = "space"
-
-[tool.uv]
-link-mode = "symlink"
