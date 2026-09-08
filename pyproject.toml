@@ -1,6 +1,6 @@
 [project]
 name = "vit-ie"
-version = "0.1.2"
+version = "1.0.0"
 description = "A vision transformer (ViT) model for estimating illuminant color in images"
 readme = "README.md"
 requires-python = ">=3.14"
