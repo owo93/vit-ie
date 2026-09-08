@@ -7,10 +7,10 @@ from . import infer, train
 
 os.environ["XLA_FLAGS"] = (
     "--xla_gpu_autotune_level=2 "
-    "--xla_gpu_enable_async_all_reduce=true "
-    "--xla_gpu_deterministic_reductions=false "
-    "--xla_gpu_enable_async_all_gather=true "
-    "--xla_gpu_max_kernel_unroll=32"
+    "--xla_gpu_triton_gemm_any=true "
+    "--xla_gpu_multi_streamed_windowed_einsum=true "
+    "--xla_gpu_threshold_for_windowed_einsum_mib=0 "
+    "--xla_gpu_enable_latency_hiding_scheduler=true"
 )
 
 FLAGS = flags.FLAGS

@@ -12,7 +12,8 @@ def main() -> None:
     """Load the config and datasets, then run the training loop."""
     config = Config.from_yaml(FLAGS.config) if FLAGS.config else Config()
 
-    jax.config.update("jax_default_matmul_precision", "high")
+    jax.config.update("jax_optimization_level", "O1")
+    jax.config.update("jax_default_matmul_precision", "highest")
 
     train_ds = SimpleCubePPDataset(
         "train", seed=config.trainer.seed, img_size=config.model.img_size

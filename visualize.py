@@ -120,12 +120,12 @@ def _(encoder_head_dims, mc, mlp_hidden_dims, mlp_ratio, mo, num_patches):
     ## Architecture
 
     The Vision Transformer we use contains three key parts:
-    1. **Patch embedding**: A ${mc.patch_size}\times{mc.patch_size}$ convolution projecting ${mc.img_size}\times{mc.img_size}$ images into ${mc.dim}$-dim patch embeddings, with a learnable `pos_embed` for ${num_patches}$ patches
+    1. **Patch embedding**: A {mc.patch_size}x{mc.patch_size} convolution projecting {mc.img_size}x{mc.img_size} images into {mc.dim}-dim patch embeddings, with a learnable `pos_embed` for {num_patches} patches
 
     2. **Encoder stack**: {mc.depth} encoder blocks
-        - ${mc.num_heads}$-head self-attention (head dims={encoder_head_dims})
-        - Feed-forward MLP with ${mlp_hidden_dims}$ hidden units ({mlp_ratio}x expansion)
-        - Dropout rate of ${mc.dropout_rate * 100:.0f}\%$
+        - {mc.num_heads}-head self-attention (head dims={encoder_head_dims})
+        - Feed-forward MLP with {mlp_hidden_dims} hidden units ({mlp_ratio}x expansion)
+        - Dropout rate of {mc.dropout_rate * 100:.0f}%
 
     3. **Post-encoder**: Final `LayerNorm` followed by a linear head projection into 3 $[R, G, B]$ classes
     """)
