@@ -17,6 +17,16 @@ FLAGS = flags.FLAGS
 
 
 def estimate_illuminant(model: ViT, image_path: str | Path, img_size: int) -> Array:
+    """Predict the illuminant chromaticity for a single image.
+
+    Args:
+        model: Trained ViT illuminant-estimation model.
+        image_path: Path to the input image.
+        img_size: Size to resize the image to.
+
+    Returns:
+        Predicted illuminant chromaticity vector of length 3.
+    """
     img = Image.open(image_path).convert("RGB")
     img = img.resize((img_size, img_size), Image.Resampling.LANCZOS)
     img = jnp.array(img, dtype=jnp.float32) / 255.0
@@ -27,6 +37,16 @@ def estimate_illuminant(model: ViT, image_path: str | Path, img_size: int) -> Ar
 
 
 def show(image: str | Path, pred: Array, size: int = 224) -> Image.Image:
+    """Build a canvas showing the input, corrected image, and predicted swatch.
+
+    Args:
+        image: Path to the input image.
+        pred: Predicted illuminant chromaticity vector of length 3.
+        size: Reserved placeholder, kept for API compatibility.
+
+    Returns:
+        The composited comparison canvas.
+    """
     img = Image.open(image).convert("RGB")
     r, g, b = float(pred[0]), float(pred[1]), float(pred[2])
 
@@ -62,6 +82,7 @@ def show(image: str | Path, pred: Array, size: int = 224) -> Image.Image:
 
 
 def main() -> None:
+    """Run inference from absl flags and display the result."""
     config = Config.from_yaml(FLAGS.config) if FLAGS.config else Config()
 
     checkpoint_path = Path(FLAGS.checkpoint) if FLAGS.checkpoint else None

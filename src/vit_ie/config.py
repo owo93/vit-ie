@@ -44,6 +44,7 @@ class TrainerConfig:
 
     @property
     def dtype(self) -> DTypeLike:
+        """Return the JAX dtype matching the configured precision."""
         return DTYPE_MAP.get(self.precision, jnp.float32)
 
 
@@ -60,8 +61,16 @@ class Config:
     run: RunConfig = field(default_factory=RunConfig)
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "Config":
-        with open(path, "r") as f:
+    def from_yaml(cls, path: str | Path) -> Config:
+        """Build a Config from a YAML file.
+
+        Args:
+            path: Path to the YAML config file.
+
+        Returns:
+            A Config populated from the YAML contents.
+        """
+        with open(path) as f:
             raw = yaml.safe_load(f) or {}
 
         model_d = raw.get("model", {})
@@ -75,6 +84,8 @@ class Config:
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the config as a JSON-serializable dict."""
+
         def convert(obj: Any) -> Any:
             if isinstance(obj, Path):
                 return str(obj)

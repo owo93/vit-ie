@@ -35,6 +35,7 @@ class TrainState(nnx.Optimizer):
 
     @property
     def lr(self) -> Array:
+        """Return the current learning rate at the present optimizer step."""
         return jnp.asarray(self.schedule(self.step.value))
 
 
@@ -43,6 +44,16 @@ class Trainer:
         self.config = config
 
     def create_schedule(self, epochs: int, peak_lr: float, steps_per_epoch: int) -> optax.Schedule:
+        """Create a warmup-then-cosine-decay learning rate schedule.
+
+        Args:
+            epochs: Total number of training epochs.
+            peak_lr: Peak learning rate reached after warmup.
+            steps_per_epoch: Number of optimizer steps per epoch.
+
+        Returns:
+            A schedule mapping optimizer step index to a learning rate.
+        """
         warmup_steps = WARMUP_EPOCHS * steps_per_epoch
 
         total_steps = epochs * steps_per_epoch
@@ -56,6 +67,15 @@ class Trainer:
         )
 
     def create_train_state(self, model: ViT, steps_per_epoch: int) -> TrainState:
+        """Build the optimizer and train state for the given model.
+
+        Args:
+            model: The vision transformer to train.
+            steps_per_epoch: Number of optimizer steps per epoch.
+
+        Returns:
+            A TrainState wrapping the model and its optimizer.
+        """
         config: TrainerConfig = self.config
         schedule = self.create_schedule(config.epochs, config.learning_rate, steps_per_epoch)
 
@@ -77,6 +97,19 @@ def train_step(
     illuminants: Array,
     dtype: DTypeLike,
 ) -> dict[str, Array]:
+    """Run a single training step and return per-batch metrics.
+
+    Args:
+        state: Train state providing optimizer, schedule and step counter.
+        model: The model being trained.
+        images: Image batch of shape (B, H, W, 3).
+        illuminants: Ground-truth illuminant chromaticities of shape (B, 3).
+        dtype: Compute dtype used for the forward pass.
+
+    Returns:
+        Dict mapping metric names to per-batch values.
+    """
+
     def loss_fn(model: ViT) -> tuple[Array, Array]:
         pred = model(images.astype(dtype), train=True).astype(jnp.float32)
         target = illuminants.astype(jnp.float32)
@@ -105,6 +138,17 @@ def eval_step(
     illuminants: Array,
     dtype: DTypeLike,
 ) -> dict[str, Array]:
+    """Run a single evaluation step and return per-batch metrics.
+
+    Args:
+        model: The model being evaluated.
+        images: Image batch of shape (B, H, W, 3).
+        illuminants: Ground-truth illuminant chromaticities of shape (B, 3).
+        dtype: Compute dtype used for the forward pass.
+
+    Returns:
+        Dict mapping metric names to per-batch values.
+    """
     images = images.astype(jnp.float32)
     pred = model(images.astype(dtype), train=False).astype(jnp.float32)
     target = illuminants.astype(jnp.float32)

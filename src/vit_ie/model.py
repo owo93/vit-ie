@@ -23,10 +23,18 @@ class PatchEmbedding(nnx.Module):
         )
 
     def __call__(self, x: Array) -> Array:
-        B = x.shape[0]
+        """Embed an image batch into a sequence of patch tokens.
+
+        Args:
+            x: Input image batch of shape (B, H, W, 3).
+
+        Returns:
+            Patch token sequence of shape (B, num_patches, dim).
+        """
+        batch_size = x.shape[0]
         x = self.project(x)
 
-        x = x.reshape(B, -1, self.dim)
+        x = x.reshape(batch_size, -1, self.dim)
         x += self.pos_embed[...]
 
         return x
@@ -40,6 +48,15 @@ class MLP(nnx.Module):
         self.dropout = nnx.Dropout(dropout_rate, rngs=rngs)
 
     def __call__(self, x: Array, *, train: bool) -> Array:
+        """Apply the two-layer feed-forward MLP with dropout.
+
+        Args:
+            x: Input tensor of shape (..., dim).
+            train: Whether dropout is active (training mode).
+
+        Returns:
+            Transformed tensor of shape (..., dim).
+        """
         x = self.fc1(x)
         x = nnx.gelu(x)
         x = self.dropout(x, deterministic=not train)
@@ -75,6 +92,15 @@ class Encoder(nnx.Module):
         self.dropout = nnx.Dropout(dropout_rate, rngs=rngs)
 
     def __call__(self, x: Array, *, train: bool) -> Array:
+        """Apply a single transformer encoder block.
+
+        Args:
+            x: Input token sequence of shape (B, N, dim).
+            train: Whether dropout and attention are in training mode.
+
+        Returns:
+            Output token sequence of shape (B, N, dim).
+        """
         h = self.n1(x)
         h = self.attn(inputs_q=h, inputs_k=h, inputs_v=h, deterministic=not train)
 
@@ -114,6 +140,15 @@ class ViT(nnx.Module):
         self.head = nnx.Linear(dim, 3, rngs=rngs)
 
     def __call__(self, x: Array, *, train: bool) -> Array:
+        """Predict per-image illuminant chromaticity from an image batch.
+
+        Args:
+            x: Image batch of shape (B, H, W, 3).
+            train: Whether dropout and attention are in training mode.
+
+        Returns:
+            Predicted illuminant chromaticity of shape (B, 3).
+        """
         x = self.patch_embed(x)
         for block in self.blocks:
             x = block(x, train=train)

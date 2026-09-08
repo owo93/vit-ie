@@ -9,6 +9,7 @@ FLAGS = flags.FLAGS
 
 
 def main() -> None:
+    """Load the config and datasets, then run the training loop."""
     config = Config.from_yaml(FLAGS.config) if FLAGS.config else Config()
 
     jax.config.update("jax_default_matmul_precision", "high")

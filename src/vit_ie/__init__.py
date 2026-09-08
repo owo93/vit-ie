@@ -28,6 +28,14 @@ flags.DEFINE_string("checkpoint", None, "path to save checkpoint")
 
 
 def main(argv: list[str]) -> None:
+    """Dispatch to the train or infer command based on argv.
+
+    Args:
+        argv: Command-line arguments after the program name.
+
+    Raises:
+        ValueError: If no command is given or --image is missing for infer.
+    """
     if len(argv) < 1:
         raise ValueError("No command specified. Use --command to specify train or infer.")
 
@@ -43,4 +51,5 @@ def main(argv: list[str]) -> None:
 
 # ruff: noqa: ANN201
 def run():
+    """Console-script entry point that delegates to absl.app.run."""
     app.run(main)

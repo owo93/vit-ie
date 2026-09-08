@@ -47,10 +47,18 @@ def _wandb_error_stats(stats: dict[str, float], namespace: str) -> dict[str, flo
 
 def run_training(
     config: Config,
-    train_ds: "SimpleCubePPDataset",
-    test_ds: "SimpleCubePPDataset",
+    train_ds: SimpleCubePPDataset,
+    test_ds: SimpleCubePPDataset,
     sync: bool,
 ) -> None:
+    """Train and periodically evaluate a ViT illuminant-estimation model.
+
+    Args:
+        config: Full training configuration.
+        train_ds: Dataset yielding (images, illuminants) training batches.
+        test_ds: Dataset yielding (images, illuminants) test batches.
+        sync: Whether to run wandb in online mode.
+    """
     train_steps = math.ceil(len(train_ds) / config.trainer.batch_size)
     eval_steps = math.ceil(len(test_ds) / config.trainer.batch_size)
     total_steps = config.trainer.epochs * train_steps

@@ -45,10 +45,14 @@ typeCheckingMode = "off"
 [tool.ruff]
 indent-width = 4
 line-length = 100
+target-version = "py314"
 
 [tool.ruff.lint]
-select = ["ANN", "B", "E", "SIM"]
-ignore = ["ANN401", "ANN204"]
+select = ["E", "W", "F", "I", "N", "D", "DOC", "UP", "ANN", "RUF100"]
+ignore = ["ANN401", "ANN204", "D100", "D101", "D104", "D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.format]
 quote-style = "double"

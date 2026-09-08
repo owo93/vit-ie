@@ -21,11 +21,28 @@ CHECKPOINT_INTERVAL = 5
 
 
 def should_checkpoint(epoch: int, total_epochs: int) -> bool:
-    """Save every CHECKPOINT_INTERVAL epochs and always on the final epoch."""
+    """Save every CHECKPOINT_INTERVAL epochs and always on the final epoch.
+
+    Args:
+        epoch: Completed epoch index.
+        total_epochs: Total number of training epochs.
+
+    Returns:
+        Whether a checkpoint should be written for this epoch.
+    """
     return epoch % CHECKPOINT_INTERVAL == 0 or epoch == total_epochs
 
 
 def save(state: CheckpointState, checkpoint_dir: Path) -> Path:
+    """Persist a checkpoint state to disk.
+
+    Args:
+        state: Checkpoint state to save.
+        checkpoint_dir: Directory in which to write the checkpoint.
+
+    Returns:
+        Path to the written checkpoint directory.
+    """
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     ckpt: dict[str, Any] = {
         "graphdef": state.graphdef,
@@ -45,6 +62,15 @@ def save(state: CheckpointState, checkpoint_dir: Path) -> Path:
 
 
 def load(path: Path, target: CheckpointState | None = None) -> CheckpointState:
+    """Restore a checkpoint state from disk.
+
+    Args:
+        path: Path to the checkpoint directory to restore.
+        target: Optional checkpoint used to infer the expected structure.
+
+    Returns:
+        The restored checkpoint state.
+    """
     path = path.resolve()
     abstract_target: dict[str, Any] | None = None
     if target is not None:
@@ -65,6 +91,14 @@ def load(path: Path, target: CheckpointState | None = None) -> CheckpointState:
 
 
 def list_checkpoints(checkpoint_dir: Path) -> list[Path]:
+    """List checkpoint directories, sorted by name.
+
+    Args:
+        checkpoint_dir: Directory to scan for checkpoints.
+
+    Returns:
+        List of checkpoint paths, sorted by name.
+    """
     if not checkpoint_dir.exists():
         return []
 
@@ -72,5 +106,13 @@ def list_checkpoints(checkpoint_dir: Path) -> list[Path]:
 
 
 def latest(checkpoint_dir: Path) -> Path | None:
+    """Return the most recent checkpoint, or None if no checkpoints exist.
+
+    Args:
+        checkpoint_dir: Directory to scan for checkpoints.
+
+    Returns:
+        Path of the newest checkpoint, or None if there are none.
+    """
     found = list_checkpoints(checkpoint_dir)
     return found[-1] if found else None

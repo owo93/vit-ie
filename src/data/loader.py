@@ -9,6 +9,15 @@ from PIL import Image
 
 @jax.jit
 def augment(image: Array, key: Array) -> Array:
+    """Apply random augmentations to the input image.
+
+    Args:
+        image: Input image of shape (H, W, C).
+        key: PRNG key
+
+    Returns:
+        Augmented image of shape (H, W, C).
+    """
     k1, k2, k3 = random.split(key, 3)
     # flip horizontal
     image = jnp.where(random.bernoulli(k1), jnp.flip(image, axis=1), image)
@@ -59,6 +68,15 @@ class SimpleCubePPDataset:
         return image, illuminant
 
     def batches(self, batch_size: int, shuffle: bool = True) -> Iterator[tuple[Array, Array]]:
+        """Yield batches of (images, illuminants) tuples from dataset.
+
+        Args:
+            batch_size: Number of samples per batch.
+            shuffle: Whether to shuffle the dataset before batching.
+
+        Yields:
+            Batches of (images, illuminants) tuples.
+        """
         self.rng, shuffle_key = random.split(self.rng)
 
         indices = jnp.arange(len(self))
