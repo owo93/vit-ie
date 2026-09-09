@@ -1,11 +1,10 @@
 # ViT for Illuminant estimation (vit-ie)
 
-An implementation of Vision Transformer for predicting single illuminant color in images trained on the [SimpleCube++](https://github.com/Visillect/CubePlusPlus) dataset, built with [Flax NNX
-](https://flax.readthedocs.io/en/latest/why.html)
+An implementation of Vision Transformer for predicting single illuminant color in images trained on the [SimpleCube++](https://github.com/Visillect/CubePlusPlus) dataset, built with [Flax NNX](https://flax.readthedocs.io/en/latest/why.html)
 
 ## Usage
 
-This [uv](https://docs.astral.sh/uv)-managed Python package exposes an `illum` command for training and inference. There is also a marimo notebook for visualizing the model's architecture at [visualize.py](visualize.py)
+This [uv](https://docs.astral.sh/uv)-managed Python package exposes a `train` command for training. There are also marimo notebooks: [infer.py](infer.py) for running inference with a trained checkpoint and [visualize.py](visualize.py) for visualizing the model's architecture.
 
 Rich outputs are logged to `stdout` and `logging` log messages to `stderr`. Append `2> output.log` to the command to log all messages to a file.
 
@@ -14,6 +13,12 @@ Rich outputs are logged to `stdout` and `logging` log messages to `stderr`. Appe
 
 ## Training
 
+```bash
+uv run train --config config.yaml
+```
+
+Append `--sync` to live-sync the run to W&B.
+
 ### Flags
 
 - `--config`: path to yaml file with hyperparameters (see [example](config.yaml.example))
@@ -21,12 +26,16 @@ Rich outputs are logged to `stdout` and `logging` log messages to `stderr`. Appe
 
 ## Inference
 
-To infer illuminant chromaticities on an image:
+Open [infer.py](infer.py) as a marimo notebook:
 
-### Flags
+```bash
+uv run marimo edit infer.py
+```
 
-- `--image`: path to input image
-- `--checkpoint`: path to model checkpoint to use
+Pick a checkpoint from the dropdown (or run training first), then upload an image
+or enter a path to it. The notebook rebuilds the model from the checkpoint's
+saved configuration and displays the predicted illuminant chromaticity alongside
+a color-corrected preview.
 
 ## Acknowledgements
 
