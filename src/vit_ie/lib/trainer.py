@@ -26,11 +26,15 @@ class TrainState(nnx.Optimizer):
         schedule: optax.Schedule,
         warmup_steps: int,
         aux_warmup_steps: int,
+        ae_weight: float,
+        repro_weight: float,
     ):
         super().__init__(model, tx, wrt=nnx.Param)
         self.schedule = schedule
         self.warmup_steps = warmup_steps
         self.aux_warmup_steps = aux_warmup_steps
+        self.ae_weight = ae_weight
+        self.repro_weight = repro_weight
         self.model = model
 
     @property
@@ -62,7 +66,7 @@ class Trainer:
             init_value=0.0,
             peak_value=peak_lr,
             warmup_steps=warmup_steps,
-            decay_steps=total_steps - warmup_steps,
+            decay_steps=total_steps,
             end_value=peak_lr * 0.01,
         )
 
@@ -78,6 +82,8 @@ class Trainer:
         """
         config: TrainerConfig = self.config
         schedule = self.create_schedule(config.epochs, config.learning_rate, steps_per_epoch)
+        ae_weight = config.loss_weights.ae_weight
+        repro_weight = config.loss_weights.repro_weight
 
         tx = optax.chain(
             optax.clip_by_global_norm(1.0),
@@ -86,7 +92,9 @@ class Trainer:
 
         warmup_steps = WARMUP_EPOCHS * steps_per_epoch
         aux_warmup_steps = AUX_WARMUP_EPOCHS * steps_per_epoch
-        return TrainState(model, tx, schedule, warmup_steps, aux_warmup_steps)
+        return TrainState(
+            model, tx, schedule, warmup_steps, aux_warmup_steps, ae_weight, repro_weight
+        )
 
 
 @nnx.jit(static_argnames=("dtype",))
@@ -115,9 +123,10 @@ def train_step(
         target = illuminants.astype(jnp.float32)
 
         lam = jnp.clip(state.step.value / state.aux_warmup_steps, 0.0, 1.0)
-        loss = jnp.mean(cosine_distance(pred, target)) + lam * jnp.mean(
-            reproduction_cosine_distance(pred, target)
-        )
+        cd = jnp.mean(cosine_distance(pred, target))
+        rae = jnp.mean(reproduction_cosine_distance(pred, target))
+
+        loss = (state.ae_weight * cd) + (lam * state.repro_weight * rae)
         angular_errors = angular_error(pred, target)
 
         return loss, angular_errors

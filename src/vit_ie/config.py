@@ -28,10 +28,17 @@ class ModelConfig:
 
 
 @dataclass
+class LossConfig:
+    ae_weight: float = 1.0
+    repro_weight: float = 3.0
+
+
+@dataclass
 class TrainerConfig:
     batch_size: int = 32
     learning_rate: float = 1e-4
     weight_decay: float = 5e-2
+    loss_weights: LossConfig = field(default_factory=LossConfig)
     epochs: int = 10
     seed: int = 42
     checkpoint_dir: Path = field(default_factory=lambda: Path("checkpoints"))
@@ -73,8 +80,10 @@ class Config:
             raw = yaml.safe_load(f) or {}
 
         model_d = raw.get("model", {})
-        trainer_d = raw.get("trainer", {})
+        trainer_d = dict(raw.get("trainer", {}))
         run_d = raw.get("run", {})
+
+        trainer_d["loss_weights"] = LossConfig(**trainer_d.get("loss_weights", {}))
 
         return cls(
             model=ModelConfig(**model_d),
