@@ -101,12 +101,16 @@ class SimpleCubePPDataset:
 
         return image, illuminant
 
-    def batches(self, batch_size: int, shuffle: bool = True) -> Iterator[tuple[Array, Array]]:
+    def batches(
+        self, batch_size: int, shuffle: bool = True, drop_last: bool = True
+    ) -> Iterator[tuple[Array, Array]]:
         """Yield batches of (images, illuminants) tuples from dataset.
 
         Args:
             batch_size: Number of samples per batch.
             shuffle: Whether to shuffle the dataset before batching.
+            drop_last: Whether to drop the final batch when it is smaller than
+                ``batch_size``.
 
         Yields:
             Batches of (images, illuminants) tuples.
@@ -121,7 +125,7 @@ class SimpleCubePPDataset:
             self.rng, augment_key = random.split(self.rng)
 
             batch_indices = indices[start_idx : start_idx + batch_size]
-            if len(batch_indices) < batch_size:
+            if drop_last and len(batch_indices) < batch_size:
                 continue
 
             images, illuminants = [], []
@@ -133,7 +137,7 @@ class SimpleCubePPDataset:
             images = jnp.stack(images)
 
             if self.should_augment:
-                batch_keys = random.split(augment_key, batch_size)
+                batch_keys = random.split(augment_key, images.shape[0])
                 images = batched_augment(images, batch_keys)
 
             yield images, jnp.stack(illuminants)

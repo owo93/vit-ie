@@ -137,7 +137,9 @@ def run_training(
             )
 
             # Training
-            for i, (images, illuminants) in enumerate(train_ds.batches(config.trainer.batch_size)):
+            for i, (images, illuminants) in enumerate(
+                train_ds.batches(config.trainer.batch_size, drop_last=True)
+            ):
                 step: dict[str, Array] = train_step(
                     state, model, images, illuminants, config.trainer.dtype
                 )
@@ -165,7 +167,9 @@ def run_training(
             angular_error_batches, reproduction_error_batches = [], []
             corrected_scene_error_batches = []
 
-            for images, illuminants in test_ds.batches(config.trainer.batch_size, shuffle=False):
+            for images, illuminants in test_ds.batches(
+                config.trainer.batch_size, shuffle=False, drop_last=False
+            ):
                 step: dict[str, Array] = eval_step(model, images, illuminants, config.trainer.dtype)
                 angular_error_batches.append(step["eval/ae"])
                 reproduction_error_batches.append(step["eval/rae"])
