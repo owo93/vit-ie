@@ -29,20 +29,15 @@ dependencies = [
 train = "vit_ie:run"
 
 [dependency-groups]
-dev = [
-  "ipykernel>=7.2.0",
-  "marimo>=0.24.0",
-  "ruff>=0.15.7",
-  "ty>=0.0.44",
-]
+dev = ["ipykernel>=7.2.0", "marimo>=0.24.0", "ruff>=0.15.7", "ty>=0.0.44"]
 
 [build-system]
-requires = ["uv_build>=0.12.0,<0.13.0"]
+requires      = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
-indent-width = 4
-line-length = 100
+indent-width   = 4
+line-length    = 100
 target-version = "py314"
 
 [tool.ruff.lint]
@@ -53,8 +48,8 @@ ignore = ["ANN401", "ANN204", "D100", "D101", "D104", "D105", "D107"]
 convention = "google"
 
 [tool.ruff.format]
-quote-style = "double"
-docstring-code-format = true
+quote-style                = "double"
+docstring-code-format      = true
 docstring-code-line-length = 42
-line-ending = "lf"
-indent-style = "space"
+line-ending                = "lf"
+indent-style               = "space"
